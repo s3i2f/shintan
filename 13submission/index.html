@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>連作投稿フォーム</title>
+  
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%232563eb'/><path d='M30 72V28M50 72V28M70 72V38' stroke='white' stroke-width='8' stroke-linecap='round'/></svg>">
+
+  <!-- Google Fonts: Shippori Mincho -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="app-header">
+    <div class="header-left">
+      <h1 class="brand-title">連作投稿フォーム</h1>
+    </div>
+
+    <!-- モバイル用タブ切替 -->
+    <nav class="mobile-nav-tabs" aria-label="画面切替">
+      <button type="button" class="tab-btn active" data-tab="form">入力フォーム</button>
+      <button type="button" class="tab-btn" data-tab="preview">縦書きプレビュー</button>
+    </nav>
+
+    <div class="header-actions">
+      <div id="save-status" class="save-status" title="入力内容はブラウザに自動保存されます">
+        <span class="save-dot"></span>
+        <span class="save-text">自動保存済</span>
+      </div>
+      <button type="button" id="btn-clear-all" class="btn-clear" title="すべての入力内容をクリア">入力内容をクリア</button>
+    </div>
+  </header>
+
+  <!-- メインレイアウト -->
+  <main class="app-layout">
+    
+    <!-- 左ペイン: 入力フォーム -->
+    <section class="pane pane-form" id="pane-form">
+      <!-- 上部固定: 基本情報（タイトル・作者名）歌を増やしても常に表示され編集可能 -->
+      <div class="form-fixed-top">
+        <div class="form-card base-info-card">
+          <div class="card-header">
+            <h2 class="card-heading">基本情報</h2>
+            <span class="song-count" id="song-count-badge">0首</span>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <label for="input-rensaku-title" class="form-label">
+                連作タイトル <span class="badge-required">必須</span>
+              </label>
+              <input 
+                type="text" 
+                id="input-rensaku-title" 
+                class="form-input" 
+                autocomplete="off"
+              >
+            </div>
+            <div class="form-row">
+              <label for="input-rensaku-author" class="form-label">
+                作者名 <span class="badge-required">必須</span>
+              </label>
+              <input 
+                type="text" 
+                id="input-rensaku-author" 
+                class="form-input" 
+                autocomplete="off"
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- スクロール領域: 短歌カードリスト -->
+      <div class="pane-scroll-inner">
+        <div class="song-card-list" id="song-card-list">
+          <!-- JSでレンダリング -->
+        </div>
+
+        <!-- 歌を追加するボタン -->
+        <div class="add-song-wrapper">
+          <button type="button" id="btn-add-song" class="btn-add-song">
+            ＋ 歌を追加する
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右ペイン: 縦書きプレビュー -->
+    <section class="pane pane-preview" id="pane-preview">
+      
+      <!-- ペイン上部バー -->
+      <div class="preview-tabs-bar">
+        <h2 class="pane-heading">縦書きプレビュー</h2>
+
+        <div class="preview-actions">
+          <button type="button" id="btn-copy-latex" class="action-btn action-btn-primary" title="LaTeXコードをクリップボードにコピー">
+            <svg class="icon-copy" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <svg class="icon-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>LaTeXコードをコピー</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 縦書きプレビュー領域 -->
+      <div class="preview-stage-wrapper">
+        <div class="tanka-paper" id="tanka-paper">
+          <div class="paper-scroll-container" id="paper-scroll-container">
+            <div class="paper-content" id="vertical-preview-content">
+              <!-- 縦書き組版描画 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Akkas タイル状ルビ入力モーダル -->
+  <div id="ruby-modal-backdrop" class="modal-backdrop">
+    <div class="ruby-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="ruby-modal-title">
+      <div class="ruby-modal-header">
+        <div class="modal-header-info">
+          <h3 id="ruby-modal-title" class="ruby-modal-title">ルビ（振り仮名）の設定</h3>
+          <div class="ruby-target-switch" id="ruby-target-switch">
+            <button type="button" class="target-switch-btn active" data-field="content" id="ruby-target-content-btn">短歌本文</button>
+            <button type="button" class="target-switch-btn" data-field="kotobagaki" id="ruby-target-kotobagaki-btn">詞書</button>
+          </div>
+        </div>
+        <button type="button" id="ruby-modal-btn-close" class="modal-close-icon" aria-label="閉じる" title="閉じる">×</button>
+      </div>
+
+      <div class="ruby-modal-body">
+        <!-- プレビュー -->
+        <div class="ruby-preview-section">
+          <div class="section-label">プレビュー:</div>
+          <div class="ruby-preview-box">
+            <p class="ruby-preview-text" id="ruby-preview-text"></p>
+          </div>
+        </div>
+
+        <!-- 漢字ワンタップ選択（熟語） -->
+        <div class="kanji-quick-section" id="kanji-quick-section">
+          <div class="section-label">漢字をタップして選択:</div>
+          <div class="kanji-quick-pills" id="kanji-quick-pills"></div>
+        </div>
+
+        <!-- 1文字タイル表示エリア -->
+        <div class="char-tiles-section">
+          <div class="section-label">一文字ずつタップして選択（2箇所タップで範囲選択）:</div>
+          <div class="char-tiles-container" id="char-tiles-container">
+            <!-- JSで文字タイル・ルビピルを生成 -->
+          </div>
+        </div>
+
+        <!-- ルビ入力・反映フォーム -->
+        <div class="ruby-input-section">
+          <div class="section-label">親文字とルビの入力:</div>
+          <div class="ruby-input-row">
+            <div class="input-col">
+              <label for="ruby-parent-input" class="sub-label">親文字</label>
+              <input 
+                type="text" 
+                id="ruby-parent-input" 
+                class="ruby-field" 
+              >
+            </div>
+            <div class="input-col">
+              <label for="ruby-reading-input" class="sub-label">ルビ（読み）</label>
+              <input 
+                type="text" 
+                id="ruby-reading-input" 
+                class="ruby-field" 
+              >
+            </div>
+            <button type="button" id="ruby-apply-btn" class="ruby-action-btn">適用</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ruby-modal-footer">
+        <button type="button" id="ruby-save-btn" class="btn-save-ruby">完了して反映</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- トースト通知 -->
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <span id="toast-message"></span>
+  </div>
+
+  <!-- 確認モーダル -->
+  <div id="modal-backdrop" class="modal-backdrop">
+    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-message">
+      <div class="confirm-body">
+        <p id="modal-message">すべての入力内容を消去しますか？</p>
+      </div>
+      <div class="confirm-footer">
+        <button type="button" id="modal-btn-cancel" class="btn-dialog btn-dialog-cancel">キャンセル</button>
+        <button type="button" id="modal-btn-confirm" class="btn-dialog btn-dialog-danger">消去する</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
